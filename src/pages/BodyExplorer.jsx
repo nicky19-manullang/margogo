@@ -283,225 +283,270 @@ const handleWheel = useCallback((e) => {
     setActiveTab('info')
   }
 
-  return (
+return (
     <div className="min-h-screen bg-[#030810] pt-20">
 
       {/* Header */}
-      <div className="text-center py-5 px-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
+      <div className="text-center py-4 px-4">
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-1">
           <span className="text-cyan-400">X-Ray</span> Body Explorer
         </h1>
-        <p className="text-white/30 text-sm">Drag untuk rotasi • Scroll untuk zoom • Klik organ</p>
+        <p className="text-white/30 text-xs md:text-sm">Drag untuk rotasi • Scroll untuk zoom • Klik organ</p>
       </div>
 
-      <div className="max-w-8xl mx-auto px-3 pb-10 flex gap-3">
+      <div className="max-w-7xl mx-auto px-3 pb-10">
 
-        {/* LEFT panel */}
-        <div className="w-52 flex-shrink-0 hidden xl:block">
-          <div className="bg-[#060f1e] border border-cyan-900/30 rounded-2xl p-3 sticky top-24">
-            <div className="text-cyan-400/60 text-xs font-semibold uppercase tracking-wider mb-2 px-1">Organ</div>
-            <input
-              type="text" placeholder="Cari..."
-              value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white/70 text-xs placeholder-white/20 outline-none focus:border-cyan-500/40 mb-2"
-            />
-            <div className="flex flex-col gap-0.5 max-h-[520px] overflow-y-auto">
-              {filtered.map(organ => (
-                <button key={organ.id} onClick={() => handleSelect(organ)}
-                  className={`flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-all ${
-                    selectedOrgan?.id === organ.id
-                      ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+        {/* TOP — Search bar mobile */}
+        <div className="xl:hidden mb-3">
+          <input
+            type="text" placeholder="Cari organ atau penyakit..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full bg-[#060f1e] border border-white/10 rounded-xl px-4 py-2.5 text-white/70 text-sm placeholder-white/20 outline-none focus:border-cyan-500/40"
+          />
+        </div>
+
+        {/* Mobile organ pills */}
+        <div className="xl:hidden flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
+          {organs.map(organ => (
+            <button key={organ.id} onClick={() => handleSelect(organ)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all ${
+                selectedOrgan?.id === organ.id
+                  ? 'bg-white/15 text-white border-white/30'
+                  : 'bg-white/5 text-white/40 border-white/5'
+              }`}
+              style={selectedOrgan?.id === organ.id ? { borderColor: organ.color + '60', color: organ.color } : {}}>
+              <span>{organ.emoji}</span>
+              {organ.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col xl:flex-row gap-3">
+
+          {/* LEFT panel — desktop only */}
+          <div className="w-52 flex-shrink-0 hidden xl:block">
+            <div className="bg-[#060f1e] border border-cyan-900/30 rounded-2xl p-3 sticky top-24">
+              <div className="text-cyan-400/60 text-xs font-semibold uppercase tracking-wider mb-2 px-1">Organ</div>
+              <input
+                type="text" placeholder="Cari..."
+                value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white/70 text-xs placeholder-white/20 outline-none focus:border-cyan-500/40 mb-2"
+              />
+              <div className="flex flex-col gap-0.5 max-h-[520px] overflow-y-auto">
+                {filtered.map(organ => (
+                  <button key={organ.id} onClick={() => handleSelect(organ)}
+                    className={`flex items-center gap-2 px-2 py-2 rounded-lg text-left transition-all ${
+                      selectedOrgan?.id === organ.id
+                        ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}>
+                    <span className="text-sm">{organ.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium truncate">{organ.name}</div>
+                      <div className="text-white/25" style={{fontSize:'9px'}}>{organ.diseases.length} penyakit</div>
+                    </div>
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: selectedOrgan?.id === organ.id ? organ.color : 'transparent' }}/>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* CENTER — X-Ray Body */}
+          <div className="flex-1 flex flex-col gap-3">
+            <div
+              ref={containerRef}
+              className="relative rounded-2xl overflow-hidden border border-cyan-900/40 bg-[#020710]"
+              style={{ height: 'clamp(320px, 55vw, 640px)', cursor: isDragging ? 'grabbing' : 'grab' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
+            >
+              {/* Scanline */}
+              <div className="absolute inset-0 pointer-events-none z-10"
+                style={{ background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.015) 2px, rgba(6,182,212,0.015) 4px)' }}/>
+
+              {/* Corner decorations */}
+              {[['top-3 left-3','border-t-2 border-l-2'],['top-3 right-3','border-t-2 border-r-2'],
+                ['bottom-3 left-3','border-b-2 border-l-2'],['bottom-3 right-3','border-b-2 border-r-2']
+              ].map(([pos, border], i) => (
+                <div key={i} className={`absolute ${pos} w-4 h-4 border-cyan-500/40 ${border}`}/>
+              ))}
+
+              {/* HUD */}
+              <div className="absolute top-3 left-4 text-cyan-500/40 text-xs font-mono z-10 hidden sm:block">
+                MARGOGO XRAY v2.0
+              </div>
+              <div className="absolute top-3 right-3 text-cyan-500/40 text-xs font-mono z-10">
+                {(zoom * 100).toFixed(0)}% | {rotation.toFixed(0)}°
+              </div>
+
+              {/* Controls */}
+              <div className="absolute bottom-3 right-3 flex gap-1 z-10">
+                <button
+                  onClick={() => setAutoRotate(p => !p)}
+                  className={`w-7 h-7 rounded-lg border text-xs transition-all ${
+                    autoRotate
+                      ? 'bg-cyan-500/30 border-cyan-400/50 text-cyan-300'
+                      : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'
                   }`}>
-                  <span className="text-sm">{organ.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium truncate">{organ.name}</div>
-                    <div className="text-white/25" style={{fontSize:'9px'}}>{organ.diseases.length} penyakit</div>
-                  </div>
-                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: selectedOrgan?.id === organ.id ? organ.color : 'transparent' }}/>
+                  {autoRotate ? '⏸' : '▶'}
                 </button>
+                <button onClick={() => setZoom(p => Math.min(2.5, p + 0.15))}
+                  className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/20 transition-all">+</button>
+                <button onClick={() => { setZoom(1); setRotation(0); setAutoRotate(true) }}
+                  className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs hover:bg-cyan-500/20 transition-all">⟳</button>
+                <button onClick={() => setZoom(p => Math.max(0.7, p - 0.15))}
+                  className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/20 transition-all">−</button>
+              </div>
+
+              <XRayBody
+                selectedOrgan={selectedOrgan}
+                onOrganClick={handleSelect}
+                zoom={zoom}
+                rotation={rotation}
+              />
+            </div>
+
+            {/* Stats bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { label: 'Total Organ', value: organs.length, icon: '🫀', color: '#06b6d4' },
+                { label: 'Penyakit', value: organs.reduce((a,o) => a + o.diseases.length, 0), icon: '🦠', color: '#ef4444' },
+                { label: 'Tips', value: organs.reduce((a,o) => a + o.prevention.length, 0), icon: '🛡️', color: '#22c55e' },
+                { label: 'Fun Facts', value: organs.reduce((a,o) => a + o.facts.length, 0), icon: '💡', color: '#eab308' },
+              ].map((s, i) => (
+                <div key={i} className="bg-[#060f1e] border border-white/5 rounded-xl p-3 text-center">
+                  <div className="text-lg mb-0.5">{s.icon}</div>
+                  <div className="font-bold text-lg" style={{ color: s.color }}>{s.value}</div>
+                  <div className="text-white/30 text-xs">{s.label}</div>
+                </div>
               ))}
             </div>
           </div>
-        </div>
 
-        {/* CENTER — X-Ray Body */}
-        <div className="flex-1 flex flex-col gap-3">
-          <div
-            ref={containerRef}
-            className="relative rounded-2xl overflow-hidden border border-cyan-900/40 bg-[#020710]"
-            style={{ height: 640, cursor: isDragging ? 'grabbing' : 'grab' }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
-          >
-            {/* Scanline effect */}
-            <div className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(6,182,212,0.015) 2px, rgba(6,182,212,0.015) 4px)',
-              }}/>
-            {/* Corner decorations */}
-            {[['top-3 left-3','border-t-2 border-l-2'],['top-3 right-3','border-t-2 border-r-2'],
-              ['bottom-3 left-3','border-b-2 border-l-2'],['bottom-3 right-3','border-b-2 border-r-2']
-            ].map(([pos, border], i) => (
-              <div key={i} className={`absolute ${pos} w-5 h-5 border-cyan-500/40 ${border}`}/>
-            ))}
-            {/* HUD elements */}
-            <div className="absolute top-4 left-16 text-cyan-500/40 text-xs font-mono z-10">
-              MARGOGO XRAY v2.0
-            </div>
-            <div className="absolute top-4 right-4 text-cyan-500/40 text-xs font-mono z-10">
-              ZOOM: {(zoom * 100).toFixed(0)}% | ROT: {rotation.toFixed(0)}°
-            </div>
-            <div className="absolute bottom-4 right-4 flex gap-1 z-10">
-              <button onClick={() => setZoom(p => Math.min(2.5, p + 0.15))}
-                className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/20 transition-all">+</button>
-              <button onClick={() => setZoom(1)}
-                className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs hover:bg-cyan-500/20 transition-all">⟳</button>
-              <button onClick={() => setZoom(p => Math.max(0.7, p - 0.15))}
-                className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm hover:bg-cyan-500/20 transition-all">−</button>
-            </div>
+          {/* RIGHT — Info panel */}
+          <div className="w-full xl:w-80 flex-shrink-0">
+            <AnimatePresence mode="wait">
+              {selectedOrgan ? (
+                <motion.div key={selectedOrgan.id}
+                  initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.2 }}
+                  className="bg-[#060f1e] border border-white/10 rounded-2xl overflow-hidden xl:sticky xl:top-24">
 
-            <XRayBody
-              selectedOrgan={selectedOrgan}
-              onOrganClick={handleSelect}
-              zoom={zoom}
-              rotation={rotation}
-            />
-          </div>
-
-          {/* Stats bar */}
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { label: 'Total Organ', value: organs.length, icon: '🫀', color: 'cyan' },
-              { label: 'Total Penyakit', value: organs.reduce((a,o) => a + o.diseases.length, 0), icon: '🦠', color: 'red' },
-              { label: 'Tips Pencegahan', value: organs.reduce((a,o) => a + o.prevention.length, 0), icon: '🛡️', color: 'green' },
-              { label: 'Fun Facts', value: organs.reduce((a,o) => a + o.facts.length, 0), icon: '💡', color: 'yellow' },
-            ].map((s, i) => (
-              <div key={i} className="bg-[#060f1e] border border-white/5 rounded-xl p-3 text-center">
-                <div className="text-lg mb-0.5">{s.icon}</div>
-                <div className={`font-bold text-lg text-${s.color}-400`}>{s.value}</div>
-                <div className="text-white/30 text-xs">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT — Info panel */}
-        <div className="w-88 flex-shrink-0" style={{width: 340}}>
-          <AnimatePresence mode="wait">
-            {selectedOrgan ? (
-              <motion.div key={selectedOrgan.id}
-                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}
-                className="bg-[#060f1e] border border-white/10 rounded-2xl overflow-hidden sticky top-24">
-
-                {/* Header */}
-                <div className="p-5 relative overflow-hidden border-b border-white/10"
-                  style={{ background: `linear-gradient(135deg, ${selectedOrgan.color}25, transparent 60%)` }}>
-                  <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full opacity-20"
-                    style={{ background: `radial-gradient(circle, ${selectedOrgan.color}, transparent 70%)` }}/>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="text-4xl">{selectedOrgan.emoji}</div>
-                    <div>
-                      <h2 className="text-white font-bold text-xl">{selectedOrgan.name}</h2>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{backgroundColor: selectedOrgan.color}}/>
-                        <span className="text-white/30 text-xs">{selectedOrgan.diseases.length} penyakit terdokumentasi</span>
+                  {/* Header */}
+                  <div className="p-4 relative overflow-hidden border-b border-white/10"
+                    style={{ background: `linear-gradient(135deg, ${selectedOrgan.color}25, transparent 60%)` }}>
+                    <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full opacity-20"
+                      style={{ background: `radial-gradient(circle, ${selectedOrgan.color}, transparent 70%)` }}/>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="text-3xl">{selectedOrgan.emoji}</div>
+                      <div>
+                        <h2 className="text-white font-bold text-lg">{selectedOrgan.name}</h2>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{backgroundColor: selectedOrgan.color}}/>
+                          <span className="text-white/30 text-xs">{selectedOrgan.diseases.length} penyakit</span>
+                        </div>
                       </div>
+                      {/* Close button mobile */}
+                      <button onClick={() => setSelectedOrgan(null)}
+                        className="ml-auto xl:hidden w-7 h-7 rounded-full bg-white/10 text-white/50 text-sm hover:bg-white/20 transition-all">
+                        ✕
+                      </button>
+                    </div>
+                    <p className="text-white/50 text-xs leading-relaxed">{selectedOrgan.description}</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedOrgan.facts.map((f, i) => (
+                        <span key={i} className="text-xs px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-white/35">
+                          💡 {f}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <p className="text-white/55 text-xs leading-relaxed">{selectedOrgan.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {selectedOrgan.facts.map((f, i) => (
-                      <span key={i} className="text-xs px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white/40">
-                        💡 {f}
-                      </span>
+
+                  {/* Tabs */}
+                  <div className="flex">
+                    {[{id:'info',label:'Fungsi',icon:'⚙️'},{id:'penyakit',label:'Penyakit',icon:'🦠'},{id:'pencegahan',label:'Cegah',icon:'🛡️'}].map(tab => (
+                      <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                        className={`flex-1 py-2.5 text-xs font-semibold transition-all flex items-center justify-center gap-1 border-b-2 ${
+                          activeTab === tab.id
+                            ? 'border-cyan-400 text-cyan-400 bg-cyan-400/5'
+                            : 'border-transparent text-white/30 hover:text-white/60'
+                        }`}>
+                        {tab.icon} {tab.label}
+                      </button>
                     ))}
                   </div>
-                </div>
 
-                {/* Tabs */}
-                <div className="flex">
-                  {[{id:'info',label:'Fungsi',icon:'⚙️'},{id:'penyakit',label:'Penyakit',icon:'🦠'},{id:'pencegahan',label:'Cegah',icon:'🛡️'}].map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                      className={`flex-1 py-3 text-xs font-semibold transition-all flex items-center justify-center gap-1 border-b-2 ${
-                        activeTab === tab.id
-                          ? 'border-cyan-400 text-cyan-400 bg-cyan-400/5'
-                          : 'border-transparent text-white/30 hover:text-white/60'
-                      }`}>
-                      {tab.icon} {tab.label}
-                    </button>
-                  ))}
-                </div>
+                  {/* Content */}
+                  <div className="p-3 max-h-64 xl:max-h-72 overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                      {activeTab === 'info' && (
+                        <motion.div key="info" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-2">
+                          {selectedOrgan.functions.map((fn, i) => (
+                            <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-white/3 border border-white/5">
+                              <div className="w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                style={{backgroundColor: selectedOrgan.color+'25', color: selectedOrgan.color}}>
+                                {i+1}
+                              </div>
+                              <span className="text-white/65 text-xs leading-relaxed">{fn}</span>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                      {activeTab === 'penyakit' && (
+                        <motion.div key="penyakit" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-2">
+                          {selectedOrgan.diseases.map((d, i) => (
+                            <div key={i} className="p-2.5 rounded-xl border border-white/5 hover:border-white/15 transition-all"
+                              style={{background: `linear-gradient(135deg, ${selectedOrgan.color}08, transparent)`}}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm">{d.icon}</span>
+                                <span className="text-white font-semibold text-xs flex-1">{d.name}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full border ${severityConfig[d.severity].color}`}>
+                                  {d.severity}
+                                </span>
+                              </div>
+                              <p className="text-white/40 text-xs leading-relaxed">{d.desc}</p>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                      {activeTab === 'pencegahan' && (
+                        <motion.div key="pencegahan" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-2">
+                          {selectedOrgan.prevention.map((tip, i) => (
+                            <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-white/3 border border-white/5">
+                              <span className="text-base">{['🥗','🏃','💧','😴','🩺','🧘','🚭','💊'][i%8]}</span>
+                              <span className="text-white/65 text-xs">{tip}</span>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div key="empty" initial={{opacity:0}} animate={{opacity:1}}
+                  className="bg-[#060f1e] border border-white/10 rounded-2xl p-6 flex-col items-center justify-center text-center xl:sticky xl:top-24 hidden xl:flex"
+                  style={{minHeight: 300}}>
+                  <div className="w-14 h-14 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-2xl mb-3">🫀</div>
+                  <h3 className="text-white/60 font-bold mb-1 text-sm">Pilih Organ</h3>
+                  <p className="text-white/25 text-xs leading-relaxed mb-4 max-w-44">Klik titik bercahaya pada tubuh X-Ray atau pilih dari daftar</p>
+                  <div className="grid grid-cols-3 gap-1.5 w-full">
+                    {organs.slice(0,9).map(o => (
+                      <button key={o.id} onClick={() => handleSelect(o)}
+                        className="p-2 rounded-xl bg-white/3 hover:bg-white/8 border border-white/5 hover:border-white/15 transition-all">
+                        <div className="text-base">{o.emoji}</div>
+                        <div className="text-white/40 mt-0.5" style={{fontSize:'9px'}}>{o.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-                {/* Content */}
-                <div className="p-4 max-h-72 overflow-y-auto">
-                  <AnimatePresence mode="wait">
-                    {activeTab === 'info' && (
-                      <motion.div key="info" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-2">
-                        {selectedOrgan.functions.map((fn, i) => (
-                          <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/3 border border-white/5 hover:border-white/10 transition-all">
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                              style={{backgroundColor: selectedOrgan.color+'25', color: selectedOrgan.color}}>
-                              {i+1}
-                            </div>
-                            <span className="text-white/65 text-xs leading-relaxed">{fn}</span>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                    {activeTab === 'penyakit' && (
-                      <motion.div key="penyakit" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-2">
-                        {selectedOrgan.diseases.map((d, i) => (
-                          <div key={i} className="p-3 rounded-xl border border-white/5 hover:border-white/15 transition-all"
-                            style={{background: `linear-gradient(135deg, ${selectedOrgan.color}08, transparent)`}}>
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <span className="text-base">{d.icon}</span>
-                              <span className="text-white font-semibold text-sm flex-1">{d.name}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full border ${severityConfig[d.severity].color}`}>
-                                {d.severity}
-                              </span>
-                            </div>
-                            <p className="text-white/45 text-xs leading-relaxed">{d.desc}</p>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                    {activeTab === 'pencegahan' && (
-                      <motion.div key="pencegahan" initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-2">
-                        {selectedOrgan.prevention.map((tip, i) => (
-                          <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/3 border border-white/5">
-                            <span className="text-lg">{['🥗','🏃','💧','😴','🩺','🧘','🚭','💊'][i%8]}</span>
-                            <span className="text-white/65 text-xs">{tip}</span>
-                          </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div key="empty" initial={{opacity:0}} animate={{opacity:1}}
-                className="bg-[#060f1e] border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center sticky top-24"
-                style={{minHeight: 400}}>
-                <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-3xl mb-4">🫀</div>
-                <h3 className="text-white/60 font-bold mb-2">Pilih Organ</h3>
-                <p className="text-white/25 text-xs leading-relaxed mb-5 max-w-44">Klik titik bercahaya pada tubuh X-Ray atau pilih dari daftar</p>
-                <div className="grid grid-cols-3 gap-1.5 w-full">
-                  {organs.slice(0,9).map(o => (
-                    <button key={o.id} onClick={() => handleSelect(o)}
-                      className="p-2 rounded-xl bg-white/3 hover:bg-white/8 border border-white/5 hover:border-white/15 transition-all">
-                      <div className="text-lg">{o.emoji}</div>
-                      <div className="text-white/40 mt-0.5" style={{fontSize:'9px'}}>{o.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
     </div>
