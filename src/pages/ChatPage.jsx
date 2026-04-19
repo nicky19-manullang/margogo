@@ -57,9 +57,31 @@ function Message({ msg }) {
           ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-br-sm'
           : 'bg-[#0d1f38] border border-white/10 text-white/80 rounded-bl-sm'
       }`}>
-        {msg.content.split('\n').map((line, i) => (
-          <p key={i} className={line === '' ? 'mt-2' : ''}>{line}</p>
-        ))}
+{msg.content.split('\n').map((line, i) => {
+  if (line === '') return <div key={i} className="mt-2" />
+
+  // Parse bold **text**
+  const parts = line.split(/(\*\*.*?\*\*)/g)
+  const parsed = parts.map((part, j) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={j} className="font-semibold text-white">{part.slice(2, -2)}</strong>
+    }
+    // Bullet point
+    if (part.startsWith('* ') || part.startsWith('- ')) {
+      return <span key={j}>{part.slice(2)}</span>
+    }
+    return <span key={j}>{part}</span>
+  })
+
+  // Wrap bullet lines
+  const isBullet = line.trimStart().startsWith('* ') || line.trimStart().startsWith('- ')
+  return (
+    <p key={i} className={`${isBullet ? 'flex gap-2 items-start' : ''} leading-relaxed`}>
+      {isBullet && <span className="text-cyan-400 mt-0.5 flex-shrink-0">•</span>}
+      <span>{parsed}</span>
+    </p>
+  )
+})}
         <div className={`text-xs mt-1.5 ${isUser ? 'text-white/60 text-right' : 'text-white/30'}`}>
           {msg.time}
         </div>
